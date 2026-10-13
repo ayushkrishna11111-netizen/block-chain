@@ -1,0 +1,28 @@
+{
+  "name": "academic-record-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web3 Academic Record Management System - issuance, updates, transcripts and degree mapping with on-chain verification as an integrated feature.",
+  "workspaces": [
+    "backend",
+    "client"
+  ],
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "chain": "hardhat node --port 8546",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "dev:backend": "npm run dev -w backend",
+    "dev:client": "npm run dev -w client",
+    "dev": "concurrently -n api,web -c blue,magenta \"npm:dev:backend\" \"npm:dev:client\"",
+    "build:client": "npm run build -w client",
+    "summary:pdf": "node scripts/build-summary-pdf.js"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "concurrently": "^9.1.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.26.0"
+  }
+}

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Executive Summary — Blockchain Academic Record System</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Inter, Arial, sans-serif; color: #141a28; line-height: 1.55; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 2pt; color: #0d1730; }
+  .sub, .meta { color: #5a6478; font-size: 9.5pt; }
+  h2 { font-size: 13.5pt; margin: 18pt 0 6pt; color: #12203d; border-bottom: 2px solid #d8e0ef; padding-bottom: 3pt; }
+  h3 { font-size: 11pt; margin: 12pt 0 4pt; color: #1c2b4d; }
+  p, li { font-size: 10pt; }
+  ul { margin: 4pt 0 8pt 18pt; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 6pt 0 10pt; font-size: 9.2pt; }
+  th { background: #eef2fa; text-align: left; }
+  th, td { border: 1px solid #ccd6e8; padding: 4pt 6pt; vertical-align: top; }
+  .ok { color: #0e7a52; font-weight: 600; }
+  .box { background: #f4f7fd; border: 1px solid #d8e0ef; border-radius: 6px; padding: 8pt 10pt; margin: 8pt 0; }
+  .footer { margin-top: 16pt; color: #7a8499; font-size: 8.5pt; border-top: 1px solid #d8e0ef; padding-top: 6pt; }
+</style>
+</head>
+<body>
+  <h1>Executive Summary</h1>
+  <p class="meta">Decentralized Academic Record Management and Credential Verification System Using Blockchain and Web3 Technology<br/>
+  SP301 Special Project Work · Kasala Yashas Reddy (24STUCHH010288), Kurri Bhavesh Kumar (24STUCHH010966), Vegesna Sujit Varma (24STUCHH010891), Mantena Laxmi Kishore Varma (24STUCHH010060) · Guide: Dr. D. Krishna Madhuri · ICFAI Foundation for Higher Education, Hyderabad<br/>
+  Measurements reproduced on Tue, 13 Oct 2026 05:58:11 GMT (local Hardhat node (automining)).</p>
+
+  <h2>1. What is happening (how the system works)</h2>
+  <p>The system is a full-stack Student Information System (SIS) where <strong>managing academic records is the product</strong> and <strong>trustless verification is one integrated feature</strong>. Academic data lives in MySQL 8 (the mutable source of truth); the blockchain stores only immutable evidence.</p>
+  <ul>
+    <li><strong>Issuance.</strong> An ISSUER/ADMIN wallet session compiles a canonical, key-sorted transcript JSON from live grades, computes a SHA-256 digest (of an uploaded PDF's exact bytes when supplied, otherwise of the canonical JSON), stores the record as DRAFT, anchors the digest + IPFS CID + issuer + timestamp on the AcademicRecordManager contract, and only then marks it ACTIVE. A failed transaction can never appear as issued (DRAFT + retry endpoint).</li>
+    <li><strong>Lifecycle.</strong> Records transition Active → Revoked or Active → Superseded. A correction (<em>supersession</em>) publishes the new record and retires the old one in a <em>single atomic transaction</em>, with the replacement link stored on-chain.</li>
+    <li><strong>Verification (integrated feature).</strong> Anyone verifies by record ID or by dropping the document: the digest is computed in the browser, looked up through a read-only <code>eth_call</code> (zero gas, no wallet) and cross-checked against MySQL. The response reports database status, chain status, an explicit consistency flag (status <em>and</em> digest must match — direct database tampering is flagged), and the issuer credential signature. Unknown IDs return 404; a chain outage is reported as <em>unavailable</em>, never as <em>tampered</em>.</li>
+    <li><strong>Identity &amp; RBAC.</strong> Password-less MetaMask <code>personal_sign</code> login produces stateless 12-hour session tokens (no server secret). Roles ADMIN/ISSUER/STUDENT/VERIFIER are enforced by the API <em>and</em> independently by the contract's issuer whitelist — the ledger cannot be written by an unauthorized wallet even if the API were bypassed.</li>
+    <li><strong>New in this build.</strong> QR codes and shareable <code>/verify/&lt;id&gt;</code> links; browser-side (MetaMask) signing of issuance/revocation transactions with server-signer fallback; AES-256-GCM encryption at rest for stored PDFs; issuer signature over the record digest, re-verified publicly; a 23-mutation tamper suite and an automated chain-outage failure-path test.</li>
+  </ul>
+
+  <h2>2. What is used (stack and evidence)</h2>
+  <table>
+    <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+    <tr><td>Frontend</td><td>React 18.3 + Vite 5, custom dark CSS, ethers v6, qrcode</td><td>Dashboard, Records, Students, student portal, public Verify (5 pages)</td></tr>
+    <tr><td>Backend</td><td>Node.js 26 + Express 4.21, mysql2, ethers v6</td><td>REST API, transcript compilation, hashing, sessions, chain coordination, audit trail</td></tr>
+    <tr><td>Database</td><td>MySQL 8.0 (6 tables)</td><td>users, programs, courses, enrollments, academic_records, audit_logs</td></tr>
+    <tr><td>Smart contract</td><td>Solidity 0.8.24, Hardhat 2.29</td><td>issuance, lifecycle, atomic supersession, RBAC whitelist, public view verification</td></tr>
+    <tr><td>Network</td><td>local Hardhat node (automining); Sepolia configured</td><td>immutable state + events</td></tr>
+    <tr><td>Storage</td><td>encrypted uploads (AES-256-GCM) + IPFS via Pinata (optional)</td><td>documents at rest; permanent CID when configured</td></tr>
+  </table>
+
+  <h3>Measured results (docs/measurements.json, Tue, 13 Oct 2026 05:58:11 GMT)</h3>
+  <table>
+    <tr><th>Operation</th><th>Trials</th><th>Min</th><th>Mean</th><th>Max</th><th>Gas</th></tr>
+    <tr><td>Public verification (GET /api/verify, eth_call + DB cross-check)</td><td>10</td><td>45 ms</td><td>54.7 ms</td><td>69 ms</td><td>0 (read-only)</td></tr>
+    <tr><td>Record issuance (compile → hash → MySQL → confirmed tx)</td><td>3</td><td>211 ms</td><td>304 ms</td><td>384 ms</td><td>1,01,548</td></tr>
+    <tr><td>Revocation (status update tx)</td><td>1</td><td>—</td><td>331 ms</td><td>—</td><td>53,179</td></tr>
+    <tr><td>Correction / supersession (one atomic tx)</td><td>1</td><td>—</td><td>174 ms</td><td>—</td><td>1,50,684</td></tr>
+    <tr><td>Issuance throughput (20-tx batch, pre-signed, raw submission)</td><td>20</td><td colspan="3">194.2 tx/s (target &gt; 20 — <span class="ok">met</span>)</td><td>1,01,560/tx</td></tr>
+  </table>
+
+  <h3>Verification evidence (all repeatable)</h3>
+  <ul>
+    <li class="ok">14/14 Hardhat unit tests (RBAC, issuance, duplicate-ID rejection, lifecycle, view verification)</li>
+    <li class="ok">52/52 end-to-end REST assertions (auth, 401/403, issuance, verification, tamper rejection, revocation, supersession, wallet-signed issuance + revocation, encrypted documents, signature checks, scoping)</li>
+    <li class="ok">10/10 chain-service assertions (issue → verify → supersede → revoke round-trip)</li>
+    <li class="ok">23/23 tamper-suite mutations rejected (bit flips, truncation, extension, header corruption, block zeroing, forged transcript, wrong file) + direct database tampering flagged by the DB/chain cross-check</li>
+    <li class="ok">7/7 chain-outage assertions (dead RPC → "unavailable", never "tampered"; 404 semantics preserved)</li>
+    <li class="ok">Production client build succeeds; browser check: dashboard, QR deep-link verification and 404 path render with a clean console</li>
+  </ul>
+
+  <div class="box"><strong>Honest limitations.</strong> Sepolia deployment and Pinata pinning are fully wired (env-configured) but were not exercised here — no funded testnet key or Pinata JWT was available. The credential signature is an issuer wallet signature over the record digest, not a W3C Data Integrity proof; no standards compliance is claimed. QR codes link to the verification page; camera-based QR scanning is not implemented. Wall-clock timings are from a local automining node; public-network timings will differ.</div>
+
+  <h2>3. What more can be built</h2>
+  <ul>
+    <li><strong>W3C Verifiable Credentials 2.0 + DID methods</strong> — issue credentials as full VCs with Data Integrity proofs and a status list for revocation, enabling ecosystem-wide interoperability (EBSI, 1EdTech Open Badges).</li>
+    <li><strong>Public-network rollout</strong> — Sepolia → mainnet/L2 anchoring (Polygon/Arbitrum for cost), multi-institution issuer governance ( multisig admin, per-faculty whitelists), and measured public-network latencies.</li>
+    <li><strong>QR scanning and offline verification</strong> — camera-based QR capture, a PWA mobile wallet, and an offline-capable verifier that caches Merkle proofs.</li>
+    <li><strong>Zero-knowledge selective disclosure</strong> — prove "GPA ≥ 3.5" or "degree conferred" without revealing the full transcript (ZKBAR-V-style), keeping privacy while retaining verifiability.</li>
+    <li><strong>IPFS hardening</strong> — pin via Pinata/web3.storage with redundancy, encrypted CID publication, and gateway health monitoring.</li>
+    <li><strong>Registrar tooling</strong> — batch issuance CSV import, cohort statistics, LMS/ERP integration (SIS connectors), and automated degree-audit checks before issuance.</li>
+    <li><strong>Security operations</strong> — key-ceremony/HSM for the server signer, key rotation, alerting on anchor failures, and a public audit explorer over contract events.</li>
+  </ul>
+
+  <p class="footer">Generated Tue, 13 Oct 2026 06:28:25 GMT from the project repository · source: scripts/build-summary-pdf.js · measured data: docs/measurements.json</p>
+</body>
+</html>

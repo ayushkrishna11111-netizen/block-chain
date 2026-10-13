@@ -1,0 +1,40 @@
+{
+  "measuredAt": "2026-10-13T05:58:11.627Z",
+  "network": "local Hardhat node (automining)",
+  "verification": {
+    "n": 10,
+    "minMs": 45,
+    "meanMs": 54.7,
+    "maxMs": 69,
+    "endpoint": "GET /api/verify/CRED-2026-037",
+    "gasCost": 0
+  },
+  "issuance": {
+    "n": 3,
+    "minMs": 211,
+    "meanMs": 304,
+    "maxMs": 384,
+    "gasUsed": [
+      101548,
+      101560,
+      101548
+    ]
+  },
+  "revocation": {
+    "ms": 331,
+    "gasUsed": 53179
+  },
+  "supersession": {
+    "ms": 174,
+    "gasUsed": 150684
+  },
+  "throughput": {
+    "batch": 20,
+    "wallMs": 103,
+    "txPerSecond": 194.2,
+    "targetTxPerSecond": 20,
+    "meetsTarget": true,
+    "gasPerIssuance": 101560
+  },
+  "blockNumber": 161
+}
