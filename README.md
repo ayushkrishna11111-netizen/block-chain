@@ -108,6 +108,22 @@ npm run deploy:local                                  # prints CONTRACT_ADDRESS
 
 Copy the printed `CONTRACT_ADDRESS=` line into the project-root `.env`.
 
+> On a local node `deploy:local` also **funds the three role wallets** with 100 ETH
+> and **whitelists the ISSUER role wallet on-chain**, so MetaMask client-side
+> signing works out of the box.
+
+The local chain runs with **chain ID 31338** (not Hardhat's default 31337), so it
+never collides with MetaMask's built-in “Localhost 8545” network. The web app asks
+MetaMask to add/switch to this network automatically on first sign-in — or add it
+manually:
+
+| Field | Value |
+|---|---|
+| Network name | Hardhat Local (8546) |
+| RPC URL | `http://127.0.0.1:8546` |
+| Chain ID | `31338` |
+| Currency symbol | ETH |
+
 ### 4. Configure `.env`
 
 ```bash
@@ -128,15 +144,25 @@ Open **http://localhost:5174** — sign in with MetaMask using one of the seeded
 
 | Role    | Wallet                                        |
 |---------|-----------------------------------------------|
-| ADMIN   | `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`  |
-| ISSUER  | `0x70997970C51812dc3A010C7d01b50e0d17dc79C8`  |
-| STUDENT | `0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC`  |
+| ADMIN   | `0x057ade225C0F0c46460d3Ce41edf98C7d47bf214`  |
+| ISSUER  | `0xA16Cf79729Ae63C63bc7Dd36953BAC9d5D7401Fe`  |
+| STUDENT | `0x47eEBE257132d4C25759bc13C938c35d22303e89`  |
 
-(public Hardhat dev keys — local development only)
+Import those accounts into MetaMask (or use them in whichever wallet you prefer).
+They live in **`scripts/role-wallets.js`** — the single source of truth used by the
+seed and the deploy script. `npm run db:seed -w backend` maps them to the ADMIN /
+ISSUER / STUDENT roles.
 
-> **Client-side signing:** whitelist the ISSUER wallet on-chain (Students → *Issuer
-> wallets* tab, as ADMIN). The Records page then shows "(wallet signs)" and every
-> issuance/revocation transaction is signed in MetaMask instead of by the server key.
+> The old public Hardhat dev wallets (`0xf39F…`, `0x7099…`, `0x3C44…`) are still
+> seeded as **test fixtures** so the automated suites (`scripts/smoke-api.js`,
+> `scripts/measure.js`, `scripts/tamper-suite.js`) can sign logins with their
+> well-known private keys.
+
+> **Client-side signing:** the ISSUER role wallet is whitelisted on-chain by
+> `npm run deploy:local`, so when you sign in with it the Records page shows
+> “(wallet signs)” and every issuance/revocation transaction is signed in MetaMask
+> instead of by the server key. (You can also toggle this yourself as ADMIN via
+> Students → *Issuer wallets* tab.)
 
 ---
 

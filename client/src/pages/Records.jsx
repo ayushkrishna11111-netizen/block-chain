@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Interface, id as ethersId, ZeroHash } from "ethers";
 import { api, apiBlob, shortAddr, statusClass } from "../api";
+import { ensureLocalChain } from "../wallet";
 import { Badge, CopyButton, DropZone, Field, QrCode, StatusBox, verificationUrl } from "../components";
 import { fileToBase64 } from "../utils/hash";
 
@@ -67,6 +68,12 @@ export default function Records() {
 
   /** MetaMask signs and sends the anchoring transaction prepared by the API. */
   async function sendWithWallet(txRequest) {
+    if (!(await ensureLocalChain())) {
+      throw new Error(
+        "MetaMask is not on the app's local chain (Hardhat 31338 @ 127.0.0.1:8546). " +
+          "Approve the network switch in MetaMask and try again."
+      );
+    }
     const [from] = await window.ethereum.request({ method: "eth_requestAccounts" });
     const txHash = await window.ethereum.request({
       method: "eth_sendTransaction",

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { api, getToken, setToken } from "./api";
+import { ensureLocalChain } from "./wallet";
 
 const AuthContext = createContext(null);
 
@@ -34,6 +35,9 @@ export function AuthProvider({ children }) {
       const [wallet] = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
+      // Point MetaMask at this app's chain before signing anything, so any
+      // later wallet-signed transaction targets the right node.
+      await ensureLocalChain();
       const { message } = await api("/auth/nonce", {
         method: "POST",
         body: { wallet },

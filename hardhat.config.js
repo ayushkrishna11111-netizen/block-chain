@@ -12,7 +12,14 @@ module.exports = {
     },
   },
   networks: {
-    hardhat: {},
+    hardhat: {
+      // Deliberately NOT the default 31337: MetaMask's built-in "Localhost 8545"
+      // network also claims chainId 31337 (and this machine has/had a node on
+      // :8545). A unique id lets the client ask wallet_addEthereumChain for an
+      // unambiguous network pointing at http://127.0.0.1:8546.
+      // Keep in sync with client/src/wallet.js.
+      chainId: 31338,
+    },
     localhost: {
       // This machine runs the development node on 8546 (8545 is in use).
       url: RPC_URL || "http://127.0.0.1:8546",
